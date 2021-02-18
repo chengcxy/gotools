@@ -1,7 +1,5 @@
-# edmgo
+# gotools
 
->用go加速数据处理工作：
-1. 协程
 
 ---
 
@@ -35,4 +33,3 @@
 - [json-iterator for Go](https://github.com/json-iterator/go)
   go get github.com/json-iterator/go
 
-# gotools
