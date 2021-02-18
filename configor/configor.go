@@ -3,7 +3,7 @@ package configor
 
 import (
 	"path"
-	"edmgo/utils"
+	"github.com/chengcxy/gotools/utils"
 )
 
 type Config struct{
