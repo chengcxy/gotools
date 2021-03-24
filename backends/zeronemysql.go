@@ -42,14 +42,14 @@ func NewMysqlConfig(f interface{})(*MysqlConfig){
 		Port:int(m["port"].(float64)),
 		Charset:m["charset"].(string),
 	}
-	mc.ConnUri = mc.getConnUri()
+	mc.ConnUri = mc.GetConnUri()
 	return mc
 	    
 
 }
 
 //拼接url
-func (mc *MysqlConfig) getConnUri()(url string){
+func (mc *MysqlConfig) GetConnUri()(url string){
 	url = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=%s",mc.User,mc.Password,mc.Host,mc.Port,mc.Db,mc.Charset)
 	return url
 }
@@ -247,9 +247,17 @@ func (m *MysqlClient) Query(query string,args ...interface{}) ([]map[string]stri
 }
 
 func (m *MysqlClient) Execute(stmt string, args ...interface{}) (int64, error){
-	//stmtIns, _ := m.Db.Prepare(stmt)
 	result,err := m.Db.Exec(stmt,args...)
-	//defer stmtIns.Close()
-	rows_affected ,_ := result.RowsAffected()
-	return rows_affected,err
+	if err != nil{
+		fmt.Println(err)
+		return 0,err
+	}
+	var affNum int64
+	 affNum, err = result.RowsAffected()
+	 if err != nil {
+		 fmt.Println(err)
+		 return 0,err
+	}
+	return affNum,nil
+		
 }
