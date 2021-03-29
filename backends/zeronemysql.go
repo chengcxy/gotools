@@ -249,13 +249,13 @@ func (m *MysqlClient) Query(query string,args ...interface{}) ([]map[string]stri
 func (m *MysqlClient) Execute(stmt string, args ...interface{}) (int64, error){
 	result,err := m.Db.Exec(stmt,args...)
 	if err != nil{
-		fmt.Println(err)
+		fmt.Println("insert err ",err)
 		return 0,err
 	}
 	var affNum int64
 	 affNum, err = result.RowsAffected()
 	 if err != nil {
-		 fmt.Println(err)
+		 fmt.Println("insert err2 ",err)
 		 return 0,err
 	}
 	return affNum,nil
