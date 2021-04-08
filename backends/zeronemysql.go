@@ -201,8 +201,8 @@ type MysqlClient struct{
 func NewMysqlClient(mc *MysqlConfig)(*MysqlClient){
 	Db,_ :=  sql.Open("mysql",mc.ConnUri)
 	Db.SetConnMaxLifetime(time.Minute * 100)
-	Db.SetMaxOpenConns(20)
-	Db.SetMaxIdleConns(20)
+	Db.SetMaxOpenConns(30)
+	Db.SetMaxIdleConns(30)
 	client := &MysqlClient{
 		Config:mc,
 		Db:Db,
