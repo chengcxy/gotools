@@ -220,6 +220,9 @@ func (m *MysqlClient) Query(query string,args ...interface{}) ([]map[string]stri
 		return nil,nil,err
 	}
 	columns, _ := rows.Columns()
+	for index,col := range columns{
+		columns[index] = strings.ToLower(col)
+	}
 	scanArgs := make([]interface{}, len(columns))
 	values := make([]sql.RawBytes, len(columns))
 	for i := range values {
