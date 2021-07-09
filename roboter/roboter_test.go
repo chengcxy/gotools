@@ -39,6 +39,6 @@ func TestGetRoboter(t *testing.T){
 	ConfigPath := "/Users/chengxinyao/config"
 	Env := "dev"
 	config := configor.NewConfig(ConfigPath,Env)
-	robot := GetRoboter("dingding",config)
+	robot := GetRoboter(config)
 	robot.SendMsg("get dingding robot")
 }
