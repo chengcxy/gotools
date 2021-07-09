@@ -44,7 +44,7 @@ func (dt WechatRoboter)SendMsg(content string)(string,error){
 	}
     resp, err := client.Post(api, contentType, bytes.NewBuffer(payload))
     if err != nil {
-        panic("send dingtalk msg err")
+        panic("send wechat msg err")
     }
     defer resp.Body.Close()
 	result, err := ioutil.ReadAll(resp.Body)
