@@ -13,10 +13,10 @@ type Roboter interface{
 
 
 func GetRoboter(robotType string,config *configor.Config)Roboter{
-	if robotType == "dingding"{
-		return NewDingTalkRoboter(config)
-	}else{
+	if robotType == "weixin"{
 		return NewWechatRoboter(config)
+	}else{
+		return NewDingTalkRoboter(config)
 	} 
 }
 
