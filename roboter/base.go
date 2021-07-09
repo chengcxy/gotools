@@ -12,7 +12,10 @@ type Roboter interface{
 
 
 
-func GetRoboter(robotType string,config *configor.Config)Roboter{
+
+func GetRoboter(config *configor.Config)Roboter{
+	c,_ := config.Get("roboter")
+	robotType := c.(map[string]interface{})["roboter_type"].(string)
 	if robotType == "weixin"{
 		return NewWechatRoboter(config)
 	}else{
