@@ -18,9 +18,19 @@ ok  	edmgo/configor	0.463s
 `
 
 func TestNewConfig(t *testing.T){
-	ConfigPath := "/Users/chengxinyao/go/src/edmgo/JsonConfigFiles"
-	Env := "local"
-	Config := NewConfig(ConfigPath,Env)
-	fmt.Println(Config.Conf)
+	ConfigPath := "/Users/chengxinyao/config/"
+	Env := "dev"
+	config := NewConfig(ConfigPath,Env)
+	//fmt.Println(config.Conf)
+	fmt.Println(config.Get("taskmeta.conn"))
+	c,_ := config.Get("job_meta_conf")
+	fmt.Println(c)
+	c,_ = config.Get("roboter.roboter_type")
+	fmt.Println(c)
+
 
 }
+
+
+
+
