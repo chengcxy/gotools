@@ -11,7 +11,8 @@
             "$mobile"
         ],
         "isAtAll": false,
-        "hook_keyword": "任务报警"
+        "hook_keyword": "任务报警",
+        "roboter_type": "dingding"
      }
 }
 ```

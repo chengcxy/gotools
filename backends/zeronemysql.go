@@ -2,6 +2,7 @@ package backends
 
 import (
 	"fmt"
+	//"log"
 	"time"
 	"strconv"
 	"strings"
@@ -44,8 +45,6 @@ func NewMysqlConfig(f interface{})(*MysqlConfig){
 	}
 	mc.ConnUri = mc.GetConnUri()
 	return mc
-	    
-
 }
 
 //拼接url
@@ -69,6 +68,13 @@ type TableMeta struct{
 	Batch int `json:"batch"` 
 	HasPrimaryKey bool`json:"has_primary_key"` 
 	TotalCount int `json:"total_count"`
+}
+
+
+//mysql客户端结构体
+type MysqlClient struct{
+	Config *MysqlConfig
+	Db *sql.DB
 }
 
 //查询元数据
@@ -191,11 +197,6 @@ func (m *MysqlClient) GetMaxId(db_name,table_name,pk string) int{
 
 
 
-//mysql客户端结构体
-type MysqlClient struct{
-	Config *MysqlConfig
-	Db *sql.DB
-}
 
 //mysql 客户端
 func NewMysqlClient(mc *MysqlConfig)(*MysqlClient){
@@ -210,7 +211,140 @@ func NewMysqlClient(mc *MysqlConfig)(*MysqlClient){
 	return client
 }
 
+func (m *MysqlClient)Read(query string)([]map[string]string,[]string,error){
+	return m.Query(query)
+}
 
+
+func (m *MysqlClient) Write(meta map[string]string,columns []string,is_create_table bool,datas []map[string]string)(int64,bool,int){
+	status := 0
+	to_db := meta["to_db"]
+	to_table := meta["to_table"]
+	write_batch,_ := strconv.Atoi(meta["write_batch"])
+	write_mode := "insert"
+	var num int64
+	num = 0
+	if len(columns)>0 && !is_create_table{
+		stmts := make([]string,len(columns))
+		schema := ""
+		id_exists := false
+		z_create_time_exists := false
+		z_update_time_exists := false
+		for _,col := range columns{
+			if col == "id"{
+				id_exists = true
+			}
+			if col == "z_create_time"{
+				z_create_time_exists = true
+			}
+			if col == "z_update_time"{
+				z_update_time_exists = true
+			}
+		}
+		if id_exists{
+			schema = fmt.Sprintf("create table if not exists %s.%s(add_id int(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',",to_db,to_table)
+		}else{
+			schema = fmt.Sprintf("create table if not exists %s.%s(id int(11) NOT NULL AUTO_INCREMENT COMMENT '主键id',",to_db,to_table)
+		}
+		for index,col := range columns{
+			stmts[index] = fmt.Sprintf(" %s varchar(255)",col)
+		}
+		schema += strings.Join(stmts,",")
+
+		temp := make([]string,0)
+		if !z_create_time_exists{
+			temp = append(temp,"z_create_time datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'")
+		}else{
+			temp = append(temp,"add_z_create_time datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'")
+		}
+		if !z_update_time_exists{
+			temp = append(temp,"z_update_time datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'")
+		}else{
+			temp = append(temp,"add_z_update_time datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'")
+		}
+		if !id_exists{
+			temp = append(temp,"PRIMARY KEY (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;")
+		}else{
+			temp = append(temp,"PRIMARY KEY (add_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;")
+		}
+		schema += fmt.Sprintf(",%s",strings.Join(temp,","))
+		m.Execute(schema)
+		is_create_table = true
+	}
+	if len(datas) == 0{
+		return 0,is_create_table,status
+	}else{
+		insert_str := strings.Join(columns,",")
+
+		insert_sql := fmt.Sprintf("%s into %s.%s(%s)values",write_mode,to_db,to_table,insert_str)
+		question_sign := make([]string,len(columns))
+		for i,_ := range columns{
+			question_sign[i] = "?"
+		}
+		question_sign_strs := fmt.Sprintf("(%s)",strings.Join(question_sign,","))
+		temp_batchs := make([]map[string]string,0)
+		for len(datas)>0{
+			data := datas[0]
+			temp_batchs = append(temp_batchs,data)
+			datas = append(datas[:0],datas[1:]...)
+			if len(temp_batchs) == write_batch{
+				_insert_sql := insert_sql
+				s := make([]string,write_batch)
+				values := make([]interface{},len(columns)*len(temp_batchs))
+				for index,data := range temp_batchs{
+					v := make([]interface{},len(columns))
+					for j :=0;j<len(columns);j++{
+						if data[columns[j]] == "NULL"{
+							v[j] = nil
+						}else{
+							v[j] = data[columns[j]]
+						}
+					}
+					for x :=0;x<len(columns);x++{
+						values[index*len(columns)+x] = v[x]
+					}
+					s[index] = question_sign_strs
+				}
+				_insert_sql += strings.Join(s,",")
+				_num,err := m.Execute(_insert_sql,values...)
+				if err != nil{
+					status = 1
+				}
+				num += _num
+				//fmt.Println("write ",num," rows")
+				temp_batchs = make([]map[string]string,0)
+			} 
+		}
+		if len(temp_batchs)>0{
+			_insert_sql := insert_sql
+			s := make([]string,len(temp_batchs))
+			values := make([]interface{},len(columns)*len(temp_batchs))
+			for index,data := range temp_batchs{
+				v := make([]interface{},len(columns))
+				for j :=0;j<len(columns);j++{
+					if data[columns[j]] == "NULL"{
+						v[j] = nil
+					}else{
+						v[j] = data[columns[j]]
+					}
+				}
+				for x :=0;x<len(columns);x++{
+					values[index*len(columns)+x] = v[x]
+				}
+				s[index] = question_sign_strs
+			}
+			_insert_sql += strings.Join(s,",")
+			_num,err := m.Execute(_insert_sql,values...)
+			if err != nil{
+				status = 1
+			}
+			num += _num
+			//fmt.Println("write ",num," rows")
+			temp_batchs = nil
+		}
+		return num,is_create_table,status
+    }
+}
 //封装query方法
 func (m *MysqlClient) Query(query string,args ...interface{}) ([]map[string]string,[]string,error){
 	//stmtIns, err := m.Db.Prepare(query)
@@ -264,3 +398,5 @@ func (m *MysqlClient) Execute(stmt string, args ...interface{}) (int64, error){
 	return affNum,nil
 		
 }
+
+
