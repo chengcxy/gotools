@@ -5,8 +5,8 @@ import (
 )
 
 type Roboter interface{
-	SendMsg(content string) (string,error)
-	GetPayload(content string)([]byte,error)
+	SendMsg(content,mobile string) (string,error)
+	GetPayload(content,mobile string)([]byte,error)
 
 }
 

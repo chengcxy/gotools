@@ -31,8 +31,8 @@ type WechatRoboter struct{
 }
 
 
-func (dt WechatRoboter)SendMsg(content string)(string,error){
-	payload,err := dt.GetPayload(content)
+func (dt WechatRoboter)SendMsg(content,mobile string)(string,error){
+	payload,err := dt.GetPayload(content,mobile)
 	if err != nil{
 		log.Println("get wechat payload message error,",err)
 		return fmt.Sprintf("content:%s transfer bytes error",content),err
@@ -51,7 +51,7 @@ func (dt WechatRoboter)SendMsg(content string)(string,error){
     return string(result),err
 }
 
-func (dt WechatRoboter)GetPayload(content string)([]byte,error){
+func (dt WechatRoboter)GetPayload(content,mobile  string)([]byte,error){
 	data := make(map[string]interface{})
 	data["msgtype"] = "text"
 	text := make(map[string]string)

@@ -37,8 +37,8 @@ type DingTalkRoboter struct{
 }
 
 
-func (dt DingTalkRoboter)SendMsg(content string)(string,error){
-	payload,err := dt.GetPayload(content)
+func (dt DingTalkRoboter)SendMsg(content,mobile string)(string,error){
+	payload,err := dt.GetPayload(content,mobile)
 	if err != nil{
 		log.Println("get dingtalk payload message error,",err)
 		return fmt.Sprintf("content:%s transfer bytes error",content),err
@@ -59,11 +59,17 @@ func (dt DingTalkRoboter)SendMsg(content string)(string,error){
 
 }
 
-func (dt DingTalkRoboter)GetPayload(content string)([]byte,error){
+func (dt DingTalkRoboter)GetPayload(content,mobile string)([]byte,error){
 	data := make(map[string]interface{})
 	data["msgtype"] = "text"
 	at := make(map[string]interface{})
-	at["atMobiles"] = dt.AtMobiles
+	if mobile == "NULL"{
+		at["atMobiles"] = dt.AtMobiles
+	}else{
+		atMobiles := make([]string,1)
+		atMobiles[0] = mobile
+		at["atMobiles"] = atMobiles
+	}
 	at["isAtAll"] = dt.IsAtall
 	data["at"] = at
 	text := make(map[string]string)
